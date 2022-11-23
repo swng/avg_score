@@ -1,4 +1,4 @@
-// v1.0  
+// v1.1
 
 const { encoder, decoder, Field } = require('tetris-fumen');
 const fs = require('fs');
@@ -80,47 +80,49 @@ function hold_reorders(queue) {
 	return result;
 }
 
+function get_cumulative_rows_cleared(solution_pages) {
+    let rowsCleared = [];
+    let testing_field = solution_pages[0].field.copy(); // a copy of it so we don't disturb the original field
+    let cumulative_rowsCleared = [[]];
+    for (let page of solution_pages) {
+        testing_field.fill(page.operation);
+        let positions = page.operation.positions();
+
+        // check for line clears
+        let y_positions = new Set();
+        for (position of positions) {
+            y_positions.add(position.y);
+        }
+        let temp_rowsCleared = new Set();
+        for (let y of y_positions) {
+            let line_cleared = true;
+            for (let x = 0; x < 10; x++) {
+                if (testing_field.at(x, y) == '_') line_cleared = false;
+            }
+            if (line_cleared) temp_rowsCleared.add(clearedOffset(rowsCleared, y));
+        }
+        for (let row of temp_rowsCleared) rowsCleared.push(row);
+        testing_field.clearLine();
+        rowsCleared.sort();
+        cumulative_rowsCleared.push(rowsCleared.slice());
+    }
+
+    return cumulative_rowsCleared;
+}
+
 function get_score(
 	queue,
 	solution_pages,
 	base_b2b = true,
 	base_combo = 1,
-	b2b_end_bonus = 0,
+    b2b_end_bonus = 0,
+    cumulative_rowsCleared = undefined,
 	base_field = undefined,
-	cumulative_rowsCleared = undefined,
 	base_viz = undefined,
 	base_rowsCleared = undefined
 ) {
 	// compute line clear orders in the source solution pages
-	if (cumulative_rowsCleared == undefined) {
-		let rowsCleared = [];
-		let testing_field = solution_pages[0].field.copy(); // a copy of it so we don't disturb the original field
-		cumulative_rowsCleared = [[]];
-		for (let page of solution_pages) {
-			testing_field.fill(page.operation);
-			let positions = page.operation.positions();
-
-			// check for line clears
-			let y_positions = new Set();
-			for (position of positions) {
-				y_positions.add(position.y);
-			}
-			let temp_rowsCleared = new Set();
-			for (let y of y_positions) {
-				let line_cleared = true;
-				for (let x = 0; x < 10; x++) {
-					if (testing_field.at(x, y) == '_') line_cleared = false;
-				}
-				if (line_cleared) temp_rowsCleared.add(clearedOffset(rowsCleared, y));
-			}
-			for (let row of temp_rowsCleared) rowsCleared.push(row);
-			testing_field.clearLine();
-			rowsCleared.sort();
-			cumulative_rowsCleared.push(rowsCleared.slice());
-
-			// console.log(cumulative_rowsCleared)
-		}
-	}
+    if (cumulative_rowsCleared == undefined) cumulative_rowsCleared = get_cumulative_rows_cleared(solution_pages);
 
 	if (base_field == undefined) base_field = solution_pages[0].field.copy();
 
@@ -345,9 +347,9 @@ function get_score(
 								solution_pages,
 								b2b,
 								combo,
-								b2b_end_bonus,
+                                b2b_end_bonus,
+                                cumulative_rowsCleared,
 								field,
-								cumulative_rowsCleared,
 								viz,
 								rowsCleared
 							)
@@ -392,10 +394,12 @@ let data = loadCSV('output/cover.csv');
 let data_nohold = loadCSV('output/cover_nohold.csv');
 
 let solutions = [];
+let solutions_cumulative_rows_cleared = [];
 
 for (let index = 0; index < data['sequence'].length; index++) {
 	// load the objects of all the decoded fumens
-	solutions.push(decoder.decode(data['sequence'][index]));
+    solutions.push(decoder.decode(data['sequence'][index]));
+    solutions_cumulative_rows_cleared.push(get_cumulative_rows_cleared(solutions[index]));
 }
 
 let all_scores = [];
@@ -411,7 +415,8 @@ for (let queue in data) {
 		let max_sol_index = 0;
 		for (let j = 0; j < data[queue].length; j++) {
 			if (data[queue][j] == 'O') {
-				let pages = solutions[j];
+                let pages = solutions[j];
+                let cumulative_rowsCleared = solutions_cumulative_rows_cleared[j];
 				for (queue_2 of hold_reorderings) {
 					// search this queue + hold in the nohold cover data
                     if (!(queue_2 in data_nohold)) throw queue_2 + " not in nohold cover data"; // nohold cover data not fully generated?
@@ -429,7 +434,7 @@ for (let queue in data) {
 						} else {
 							// compute it
 							// queue, solution pages, initial b2b, initial combo, b2b end bonus
-							let temp = get_score(queue_2, pages, true, 1, 0);
+							let temp = get_score(queue_2, pages, true, 1, 0, cumulative_rowsCleared);
 							memoize[property] = temp;
 							if (temp > max_score) {
 								max_score = temp;
