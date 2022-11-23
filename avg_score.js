@@ -1,30 +1,4 @@
-/*
-
-v0.9
-
-Compute the average score of a DPC setup, given a solution set.
-Takes into account tspins, quads, line clears, combos.
-Doesn't currently take into account sd/hd points.
-
-Usage:
-1) Gather your solution set. Minimals, extra scoring solutions, whatever. Get them in glued fumen format. [fumen solutions]
-2) precompute cover and nohold cover with sfinder
-    Example commands:
-    java -jar sfinder.jar cover -d 180 -p *p7 -t [fumen solutions]
-    java -jar sfinder.jar cover -d 180 -p *p7 -t [fumen solutions] --hold avoid -o output/cover_nohold.csv
-3) name them output/cover.csv and output/cover_nohold.csv and throw them in the same folder as this script
-4) run script
-    node avg_score.js
-
-Hopefully it should output an average score.
-
-Notes:
-This assumes the solutions are valid and the cover.csv files were generated correctly. There's very little error handling.
-There are a couple debugging console logs, comment them out if you wish.
-For non 100% setups, adjust line ~460 to set how to handle fail queues. Default is to throw an error; alternatively, you can give that queue -3000.
-Script works on solution queues without dupes. For solution queues with dupes, they can sometimes work; try by adjusting line ~171 and ~348. Default is to throw an error; alternatively, comment the else block out. This may allow the solution to be processed, depending on solution set.
-
-*/
+// v1.0  
 
 const { encoder, decoder, Field } = require('tetris-fumen');
 const fs = require('fs');
@@ -109,13 +83,13 @@ function hold_reorders(queue) {
 function get_score(
 	queue,
 	solution_pages,
-	b2b = true,
-	combo = 1,
+	base_b2b = true,
+	base_combo = 1,
 	b2b_end_bonus = 0,
-	field = undefined,
+	base_field = undefined,
 	cumulative_rowsCleared = undefined,
-	viz = undefined,
-	rowsCleared = undefined
+	base_viz = undefined,
+	base_rowsCleared = undefined
 ) {
 	// compute line clear orders in the source solution pages
 	if (cumulative_rowsCleared == undefined) {
@@ -148,27 +122,33 @@ function get_score(
 		}
 	}
 
-	if (field == undefined) field = solution_pages[0].field.copy();
+	if (base_field == undefined) base_field = solution_pages[0].field.copy();
 
-	if (viz == undefined) {
-		var viz = []; // vizualizer fumen for debugging purposes
-		viz.push(toPage(field, 0));
+	if (base_viz == undefined) {
+		var base_viz = []; // vizualizer fumen for debugging purposes
+		base_viz.push(toPage(base_field, 0));
 	}
 
-    if (rowsCleared == undefined) rowsCleared = [];
-    
-    let score = 0;
+	if (base_rowsCleared == undefined) base_rowsCleared = [];
+
+	// let score = 0;
+	let results = [];
 
 	let piece = queue[0];
-	let not_placed = true;
 	for (let page of solution_pages) {
 		let op = page.operation.copy();
 		// assuming the queue matches the pieces in the solution and there's exactly one of each piece, no error handling here :sunglasses:
-		if (not_placed && piece == op.type) {
+		if (piece == op.type) {
 			global_y = clearedOffset(cumulative_rowsCleared[page.index], op.y);
-			op.y = global_y - inverse_clearedOffset(rowsCleared, global_y);
+			op.y = global_y - inverse_clearedOffset(base_rowsCleared, global_y);
 
-			if (field.canLock(op)) {
+            if (base_field.canLock(op)) {
+                let field = base_field.copy();
+				let score = 0;
+				let b2b = base_b2b;
+                let combo = base_combo;
+                let viz = [...base_viz]; // this might need to be a deep copy not sure
+                let rowsCleared = [...base_rowsCleared]; // shallow copy should work here because numbers are primitive
 				field.put(op);
 
 				viz.push(toPage(field, viz.length));
@@ -342,53 +322,56 @@ function get_score(
 
 				field.clearLine();
 
-				not_placed = false;
+				// check if board is cleared
+				let pc = true;
+				for (let x = 0; x < 10; x++) {
+					if (field.at(x, 0) != '_') pc = false; // just gonna check the bottom row
+				}
+				if (pc) {
+					// console.log('PC:', 3000);
+					// score += 3000;
+					if (b2b) score += b2b_end_bonus;
+					// return score;
+				}
+
+				if (queue.length <= 1 && !pc) score = -3000; // last piece but no PC, this path was a failure
+
+				if (queue.length <= 1) results.push(score);  // end of queue is base case for recursive function
+				else
+					results.push( // otherwise, recursively call score function to get max score on the rest of the queue
+						score +
+							get_score(
+								queue.substring(1),
+								solution_pages,
+								b2b,
+								combo,
+								b2b_end_bonus,
+								field,
+								cumulative_rowsCleared,
+								viz,
+								rowsCleared
+							)
+					);
 
 				// console.log(encoder.encode(viz));
 			} else {
 				// throwing an error for debugging purposes, but may want to remove this if working on non *p7 solution queues with dupes
 				// console.log(queue, encoder.encode(solution_pages));
 				// console.log(encoder.encode(viz));
-				// console.log(field.str(), op);
-				// throw "ummmmmmmmm";
+				// console.log(field.str(), op, global_y, rowsCleared);
+				throw "solution path fail; does solution queue have dupes?";
 				// return 0; // piece could not lock, solution and queue were incompatible
 			}
 		}
-
-		// check if board is cleared
-		let pc = true;
-		for (let x = 0; x < 10; x++) {
-			if (field.at(x, 0) != '_') pc = false; // just gonna check the bottom row
-		}
-		if (pc) {
-			// console.log('PC:', 3000);
-			// score += 3000;
-			if (b2b) score += b2b_end_bonus;
-			return score;
-		}
-	}
-    if (queue.length <= 1) { // if the last piece placement didn't result in a PC, something went wrong
-        throw ('uhhhhhhhhhh', encoder.encode(viz));
-        return -3000;
     }
-        
     
-
-	return (
-		score +
-		get_score(
-			queue.substring(1),
-			solution_pages,
-			b2b,
-			combo,
-			b2b_end_bonus,
-			field,
-			cumulative_rowsCleared,
-			viz,
-			rowsCleared
-		)
-    );
-    
+    if (results.length == 0) { // no piece placement applied to this piece, this path is a failure
+        // return -3000; // may want to just return -30000 if working with non *p7 solution queues with dupes
+        // console.log(queue, encoder.encode(base_viz));
+        // console.log(base_field.str())
+        throw "solution path fail; does solution queues have dupes?";
+    }
+    return Math.max(...results);
 }
 
 let memoize = {};
@@ -431,7 +414,8 @@ for (let queue in data) {
 				let pages = solutions[j];
 				for (queue_2 of hold_reorderings) {
 					// search this queue + hold in the nohold cover data
-					valid = queue_2 in data_nohold && data_nohold[queue_2][j] == 'O';
+                    if (!(queue_2 in data_nohold)) throw queue_2 + " not in nohold cover data"; // nohold cover data not fully generated?
+					valid = (queue_2 in data_nohold) && data_nohold[queue_2][j] == 'O';
 					if (valid) {
 						let property = queue_2 + j;
 						if (property in memoize) {
@@ -459,10 +443,10 @@ for (let queue in data) {
 		}
 		if (max_score == -3000) {
 			// change this if you know you're working with non 100% setups with fail queues
-			console.log(queue, data[queue]);
-			throw 'ummmmmmmmm';
+			// console.log(queue, data[queue]);
+			throw 'PC fail queue ' + queue;
 		}
-		// console.log(max_score, max_queue, data["sequence"][max_sol_index]);
+		console.log(max_score, max_queue, data["sequence"][max_sol_index]);
 		all_scores.push(max_score);
 	}
 }
