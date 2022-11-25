@@ -1,4 +1,4 @@
-v1.1
+v1.5
 
 Compute the average score of a DPC setup, given a solution set.  
 Takes into account tspins, quads, line clears, combos.  
