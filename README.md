@@ -18,7 +18,7 @@ Hopefully it should output an average score.
 
 Adjust base get_score() call arguments to configure initial b2b, initial combo, and b2b end bonus
 
-Notes:
+Notes:  
 This assumes the solutions are valid and the cover.csv files were generated correctly. There's very little error handling.  
 There are a couple debugging console logs, comment them out if you wish.  
 For non 100% setups, comment out the "PC fail queue" throw statement. This will give that queue -3000 points in the average.  
