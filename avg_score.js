@@ -1,4 +1,4 @@
-// v1.5
+// v1.6
 
 const { encoder, decoder, Field } = require('tetris-fumen');
 const fs = require('fs');
@@ -587,7 +587,7 @@ function get_score(
 
 				if (queue.length <= 1 && !pc) score = -3000; // last piece but no PC, this path was a failure
 
-				if (queue.length <= 1) results.push(score);  // end of queue is base case for recursive function
+				if (queue.length <= 1 || pc) results.push(score);  // end of queue is base case for recursive function
 				else
 					results.push( // otherwise, recursively call score function to get max score on the rest of the queue
 						score +
