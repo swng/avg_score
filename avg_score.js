@@ -1,4 +1,4 @@
-// v1.8
+// v1.9
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
@@ -29,25 +29,25 @@ let score_table_spin      = [ 400,  800, 1200, 1600];
 let score_table_spin_mini = [ 100,  200,  400];
 let score_table_pc        = [ NaN,  800, 1200, 1800,  NaN]; // only used for guideline
 
-function toPage(in_field, i) {
-	// for debugging purposes
-	let field = in_field.copy();
-	let flags = {
-		rise: false,
-		mirror: false,
-		colorize: true,
-		comment: '',
-		lock: true,
-		piece: undefined,
-	};
-	let page = {
-		comment: '',
-		field,
-		flags: flags,
-		index: i,
-	};
-	return page;
-}
+// function toPage(in_field, i) {
+// 	// for debugging purposes
+// 	let field = in_field.copy();
+// 	let flags = {
+// 		rise: false,
+// 		mirror: false,
+// 		colorize: true,
+// 		comment: '',
+// 		lock: true,
+// 		piece: undefined,
+// 	};
+// 	let page = {
+// 		comment: '',
+// 		field,
+// 		flags: flags,
+// 		index: i,
+// 	};
+// 	return page;
+// }
 
 function occupiedCorner(field, corner) {
 	// field.at with extra check for out of bounds
@@ -295,14 +295,14 @@ function get_180_kicks(operation, initial_rotation) {
 	}
 }
 
-function unobstructed(field, rotation) {
-	let positions = rotation.positions();
-	for (let position of positions) {
-		if (position.y < 0 || position.x < 0 || position.x > 9) return false;
-		if (field.at(position.x, position.y) != "_") return false;
-	}
-	return true;
-}
+// function unobstructed(field, rotation) {
+// 	let positions = rotation.positions();
+// 	for (let position of positions) {
+// 		if (position.y < 0 || position.x < 0 || position.x > 9) return false;
+// 		if (field.at(position.x, position.y) != "_") return false;
+// 	}
+// 	return true;
+// }
 
 function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, returns the kick index (0-4) of the last spin used
 	// console.log(page.field.str());
@@ -314,21 +314,21 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 	let cw = spin_cw(op.copy());
 	let ccw = spin_ccw(op.copy());
 
-	if (unobstructed(field, cw)) return 0;
-	//if (unobstructed(field, ccw)) return 0;
-	//if (unobstructed(field, r180)) return 0;
+	if (field.canFill(cw)) return 0;
+	//if (field.canFill(ccw)) return 0;
+	//if (field.canFill(r180)) return 0;
 	// if any kickless rotation is unobstructed, the other two will also be
 
 	let cw_kicks = get_cw_kicks(cw, op.rotation);
 	let ccw_kicks = get_ccw_kicks(ccw, op.rotation);
 
 	for (let kick of cw_kicks) {
-		if (unobstructed(field, kick)) { // try and reverse it
+		if (field.canFill(kick)) { // try and reverse it
 			let temp = spin_ccw(kick.copy());
 			let temp_kicks = get_ccw_kicks(temp, kick.rotation);
 			for (let i = 1; i < 5; i++) {
 				temp_kick = temp_kicks[i];
-				if (unobstructed(field, temp_kick)) {
+				if (field.canFill(temp_kick)) {
 					// console.log(i, kick, temp_kick);
 					if (temp_kick.x == op.x && temp_kick.y == op.y) return i;
 					return -1; // only first working kick
@@ -339,12 +339,12 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 		}
 	}
 	for (let kick of ccw_kicks) {
-		if (unobstructed(field, kick)) { // try and reverse it
+		if (field.canFill(kick)) { // try and reverse it
 			let temp = spin_cw(kick.copy());
 			let temp_kicks = get_cw_kicks(temp, kick.rotation);
 			for (let i = 1; i < 5; i++) {
 				temp_kick = temp_kicks[i];
-				if (unobstructed(field, temp_kick)) {
+				if (field.canFill(temp_kick)) {
 					// console.log(i, kick, temp_kick);
 					if (temp_kick.x == op.x && temp_kick.y == op.y) return i;
 					return -1; // only first working kick
@@ -362,12 +362,12 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 		let r180_kicks = get_180_kicks(r180, op.rotation);
 
 		for (let kick of r180_kicks) {
-			if (unobstructed(field, kick)) { // try and reverse it
+			if (field.canFill(kick)) { // try and reverse it
 				let temp = spin_180(kick.copy());
 				let temp_kicks = get_180_kicks(temp, kick.rotation);
 				for (let i = 1; i < temp_kicks.length; i++) {
 					temp_kick = temp_kicks[i];
-					if (unobstructed(field, temp_kick)) {
+					if (field.canFill(temp_kick)) {
 						// console.log(i, kick, temp_kick);
 						if (temp_kick.x == op.x && temp_kick.y == op.y) return i;
 						return -1; // only first working kick
@@ -399,7 +399,7 @@ function get_score(
 
 	if (base_viz === undefined) {
 		var base_viz = []; // vizualizer fumen for debugging purposes
-		base_viz.push(toPage(base_field, 0));
+		base_viz.push({field: base_field});
 	}
 
 	if (base_rowsCleared === undefined) base_rowsCleared = [];
@@ -424,7 +424,7 @@ function get_score(
 				let rowsCleared = [...base_rowsCleared]; // shallow copy should work here because numbers are primitive
 				field.put(op);
 
-				viz.push(toPage(field, viz.length));
+				viz.push({ operation: op });
 
 				let positions = op.positions();
 
