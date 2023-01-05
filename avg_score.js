@@ -408,9 +408,11 @@ function get_ccw_kicks(operation, initial_rotation) {
 }
 
 function get_180_kicks(operation, initial_rotation) {
-	let result = Array(6).fill().map(_ => operation.copy());
+	if (GAME === GAMES.GUIDELINE) {throw 'guideline has no 180';}
 	if (operation.type == 'I') {
-		switch (initial_rotation) { // using SRS+ kickset here
+		// Jstris and tetr.io have the same 180 I kicks
+		let result = Array(2).fill().map(_ => operation.copy());
+		switch (initial_rotation) {
 			case 'spawn':  // 0->2
 				result[0].x += 1; result[0].y -= 1;
 				result[1].x += 1; result[1].y += 0;
@@ -430,37 +432,59 @@ function get_180_kicks(operation, initial_rotation) {
 		}
 		// only 180 kick is the immobile one for I pieces I guess
 		return result.slice(0, 2);
-	} else {
-		switch (initial_rotation) { // using SRS+ kickset here
-			case 'spawn':  // 0->2
-								  result[1].y += 1;
-				result[2].x += 1; result[2].y += 1;
-				result[3].x -= 1; result[3].y += 1;
-				result[4].x += 1;
-				result[5].x -= 1;
-				break;
-			case 'left':  // L->R
-				result[1].x -= 1;
-				result[2].x -= 1; result[2].y += 2;
-				result[3].x -= 1; result[3].y += 1;
-				                  result[4].y += 2;
-				                  result[5].y += 1;
-				break;
-			case 'reverse':  // 2->0
-				                  result[1].y -= 1;
-				result[2].x -= 1; result[2].y -= 1;
-				result[3].x += 1; result[3].y -= 1;
-				result[4].x -= 1;
-				result[5].x += 1;
-				break;
-			case 'right':  // R->L
-				result[1].x += 1;
-				result[2].x += 1; result[2].y += 2;
-				result[3].x += 1; result[3].y += 1;
-				                  result[4].y += 2;
-				                  result[5].y += 1;
-				break;
-		}
+	}
+	let result;
+	switch (GAME) {
+		case GAMES.TETRIO:
+			result = Array(6).fill().map(_ => operation.copy());
+			switch (initial_rotation) { // using SRS+ kickset here
+				case 'spawn':  // 0->2
+					                  result[1].y += 1;
+					result[2].x += 1; result[2].y += 1;
+					result[3].x -= 1; result[3].y += 1;
+					result[4].x += 1;
+					result[5].x -= 1;
+					break;
+				case 'left':  // L->R
+					result[1].x -= 1;
+					result[2].x -= 1; result[2].y += 2;
+					result[3].x -= 1; result[3].y += 1;
+					                  result[4].y += 2;
+					                  result[5].y += 1;
+					break;
+				case 'reverse':  // 2->0
+					                  result[1].y -= 1;
+					result[2].x -= 1; result[2].y -= 1;
+					result[3].x += 1; result[3].y -= 1;
+					result[4].x -= 1;
+					result[5].x += 1;
+					break;
+				case 'right':  // R->L
+					result[1].x += 1;
+					result[2].x += 1; result[2].y += 2;
+					result[3].x += 1; result[3].y += 1;
+					                  result[4].y += 2;
+					                  result[5].y += 1;
+					break;
+			}
+			return result;
+		case GAMES.JSTRIS:
+			result = Array(2).fill().map(_ => operation.copy());
+			switch (initial_rotation) {
+				case 'spawn':  // 0->2
+					result[1].y += 1;
+					break;
+				case 'left':  // L->R
+					result[1].x -= 1;
+					break;
+				case 'reverse':  // 2->0
+					result[1].y -= 1;
+					break;
+				case 'right':  // R->L
+					result[1].x += 1;
+					break;
+			}
+			return result;
 	}
 	return result;
 }
@@ -1014,5 +1038,5 @@ function generate_all_permutations(l)
 
 let queues = generate_all_permutations('LJSZIOT').map(q => q.join(''));
 
-let results = calculate_all_scores(queues, loadPathCSV('output/path.csv'), true, 1);
+let results = calculate_all_scores(queues, loadPathCSV('path.csv'), true, 1);
 console.log(results);
