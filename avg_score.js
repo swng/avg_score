@@ -12,6 +12,82 @@ let score_table_spin_mini = [ 100,  200,  400];
 let score_table_pc        = [ NaN,  800, 1200, 1800,  NaN]; // only used for guideline
 
 
+const rotation_directions = ['spawn', 'right', 'reverse', 'left'];
+const rotation_types = {
+	'cw': +1,
+	'ccw': -1,
+	'180': +2
+};
+const reverse_rotations = {
+	'cw': 'ccw',
+	'ccw': 'cw',
+	'180': '180'
+}
+
+// kick tables based on intial rotation
+const TLJSZ_kicks_cw = {
+	'spawn':   [[ 0, 0], [-1, 0], [-1,+1], [ 0,-2], [-1,-2]],
+	'right':   [[ 0, 0], [+1, 0], [+1,-1], [ 0,+2], [+1,+2]],
+	'reverse': [[ 0, 0], [+1, 0], [+1,+1], [ 0,-2], [+1,-2]],
+	'left':    [[ 0, 0], [-1, 0], [-1,-1], [ 0,+2], [-1,+2]]
+};
+
+const TLJSZ_kicks_ccw = {
+	'spawn':   [[ 0, 0], [+1, 0], [+1,+1], [ 0,-2], [+1,-2]],
+	'right':   [[ 0, 0], [+1, 0], [+1,-1], [ 0,+2], [+1,+2]],
+	'reverse': [[ 0, 0], [-1, 0], [-1,+1], [ 0,-2], [-1,-2]],
+	'left':    [[ 0, 0], [-1, 0], [-1,-1], [ 0,+2], [-1,+2]]
+};
+
+const TLJSZ_kicks_180 = {
+	'spawn':   [[ 0, 0], [ 0,+1], [+1,+1], [-1,+1], [+1, 0], [-1, 0]],
+	'right':   [[ 0, 0], [+1, 0], [+1,+2], [+1,+1], [ 0,+2], [ 0,+1]],
+	'reverse': [[ 0, 0], [ 0,-1], [-1,-1], [+1,-1], [-1, 0], [+1, 0]],
+	'left':    [[ 0, 0], [-1, 0], [-1,+2], [-1,+1], [ 0,+2], [ 0,+1]]
+}
+
+const kick_table = {
+	'cw': {
+		'T': TLJSZ_kicks_cw,
+		'I': {
+			'spawn':   [[+1, 0][+2, 0][-1, 0][-1,-1][+2,+2]],
+			'right':   [[ 0,-1][-1,-1][+2,-1][-1,+1][+2,-2]],
+			'reverse': [[-1, 0][+1, 0][-2, 0][+1,+1][-2,-2]],
+			'left':    [[ 0,+1][+1,+1][-2,+1][+1,-1][-2,+2]]
+		},
+		'L': TLJSZ_kicks_cw,
+		'J': TLJSZ_kicks_cw,
+		'S': TLJSZ_kicks_cw,
+		'Z': TLJSZ_kicks_cw
+	},
+	'ccw': {
+		'T': TLJSZ_kicks_ccw,
+		'I': {
+			'spawn':   [[ 0,-1][-1,-1][+2,-1][+2,-2][-1,+1]],
+			'right':   [[+1, 0][+2, 0][-1, 0][+2,+2][-1,-1]],
+			'reverse': [[ 0,+1][-2,+1][+1,+1][-2,+2][+1,-1]],
+			'left':    [[-1, 0][-2, 0][+1, 0][-2,-2][+1,+1]]
+		},
+		'L': TLJSZ_kicks_ccw,
+		'J': TLJSZ_kicks_ccw,
+		'S': TLJSZ_kicks_ccw,
+		'Z': TLJSZ_kicks_ccw,
+	},
+	'180': {
+		'T': TLJSZ_kicks_180,
+		'I': {
+			'spawn':   [[+1,-1], [+1, 0]],
+			'right':   [[-1,-1], [ 0,-1]],
+			'reverse': [[-1,+1], [-1, 0]],
+			'left':    [[+1,+1], [ 0,+1]]
+		},
+		'L': TLJSZ_kicks_180,
+		'J': TLJSZ_kicks_180,
+		'S': TLJSZ_kicks_180,
+		'Z': TLJSZ_kicks_180
+	}
+};
+
 function occupiedCorner(field, corner) {
 	// field.at with extra check for out of bounds
 	if (corner[1] < 0 || corner[0] < 0 || corner[0] > 9) return true;
@@ -81,60 +157,19 @@ function get_cumulative_rows_cleared(solution_pages) {
 	return cumulative_rowsCleared;
 }
 
-function vanilla_spin_cw(operation) {
-	let old_rotation = operation.rotation;
-	switch (old_rotation) {
-		case 'spawn':
-			operation.rotation = 'right';
-			break;
-		case 'right':
-			operation.rotation = 'reverse';
-			break;
-		case 'reverse':
-			operation.rotation = 'left';
-			break;
-		case 'left':
-			operation.rotation = 'spawn';
-			break;
-	}
-	return operation;
-}
+function vanilla_spin(operation, rotation_type) {
+	// get old rotation index
+	let old_rotation_index = rotation_directions.indexOf(operation.rotation);
 
-function vanilla_spin_ccw(operation) {
-	let old_rotation = operation.rotation;
-	switch (old_rotation) {
-		case 'spawn':
-			operation.rotation = 'left';
-			break;
-		case 'left':
-			operation.rotation = 'reverse';
-			break;
-		case 'reverse':
-			operation.rotation = 'right';
-			break;
-		case 'right':
-			operation.rotation = 'spawn';
-			break;
-	}
-	return operation;
-}
+	// rotate using the index
+	let rotated_index = (old_rotation_index + rotation_types[rotation_type]) % 4;
 
-function vanilla_spin_180(operation) {
-	let old_rotation = operation.rotation;
-	switch (old_rotation) {
-		case 'spawn':
-			operation.rotation = 'reverse';
-			break;
-		case 'left':
-			operation.rotation = 'right';
-			break;
-		case 'reverse':
-			operation.rotation = 'spawn';
-			break;
-		case 'right':
-			operation.rotation = 'left';
-			break;
-	}
+	// get new rotation direction
+	let new_rotation = rotation_directions[rotated_index];
+
+	// change rotation in operation
+	operation.rotation = new_rotation; 
+	
 	return operation;
 }
 
@@ -165,30 +200,16 @@ function move_up(operation, number, field) {
 	return moved_operation;
 }
 
-function spin_cw(operation, field, reverse = false) {
+function spin_with_kicks(operation, field, rotation_type, reverse = false) {
     if (operation.type == 'O') return []; // let's not bother rotating O pieces
-    let rotated_operation = operation.copy();
-	switch (operation.rotation) {
-		case 'spawn':
-			rotated_operation.rotation = 'right';
-			break;
-		case 'right':
-			rotated_operation.rotation = 'reverse';
-			break;
-		case 'reverse':
-			rotated_operation.rotation = 'left';
-			break;
-		case 'left':
-			rotated_operation.rotation = 'spawn';
-			break;
-    }
+    let rotated_operation = vanilla_spin(operation, rotation_type);
     
     if (reverse) {
-        let kicks = get_cw_kicks(rotated_operation, operation.rotation);
+        let kicks = get_kicks(rotated_operation, operation.rotation, rotation_type);
         let result = [];
         for (let kick of kicks) {
             if (field.canFill(kick)) {
-                let temp = spin_ccw(kick, field);
+                let temp = spin_with_kicks(kick, field, reverse_rotations[rotation_type])[0];
                 if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
             }
         }
@@ -196,7 +217,7 @@ function spin_cw(operation, field, reverse = false) {
     }
 
     if (!field.canFill(rotated_operation)) {
-        let kicks = get_cw_kicks(rotated_operation, operation.rotation);
+        let kicks = get_kicks(rotated_operation, operation.rotation, rotation_type);
         for (let kick of kicks) {
             if (field.canFill(kick)) return kick;
         }
@@ -204,272 +225,24 @@ function spin_cw(operation, field, reverse = false) {
     }
 
 
-	return rotated_operation;
+	return [rotated_operation];
 }
 
-function spin_ccw(operation, field, reverse = false) {
-    if (operation.type == 'O') return []; // let's not bother rotating O pieces
-	let rotated_operation = operation.copy();
-	switch (operation.rotation) {
-		case 'spawn':
-			rotated_operation.rotation = 'left';
-			break;
-		case 'left':
-			rotated_operation.rotation = 'reverse';
-			break;
-		case 'reverse':
-			rotated_operation.rotation = 'right';
-			break;
-		case 'right':
-			rotated_operation.rotation = 'spawn';
-			break;
-    }
 
-    if (reverse) {
-        let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
-        let result = [];
-        for (let kick of kicks) {
-            if (field.canFill(kick)) {
-                let temp = spin_cw(kick, field);
-                if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
-            }
-        }
-        return result;
-    }
+function get_kicks(operation, initial_rotation, rotation_type) {
+    let result = [];
 
-    if (!field.canFill(rotated_operation)) {
-        let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
-        for (kick of kicks) {
-            if (field.canFill(kick)) return kick;
-        }
-        return undefined;
-    }
-	return rotated_operation;
-}
+	let kick_offsets = kick_table[rotation_type][initial_rotation];
 
-function spin_180(operation, field, reverse = false) {
-    if (operation.type == 'O') return []; // let's not bother rotating O pieces
-    let rotated_operation = operation.copy();
-    switch (operation.rotation) {
-        case 'spawn':
-			rotated_operation.rotation = 'reverse';
-			break;
-		case 'left':
-			rotated_operation.rotation = 'right';
-			break;
-		case 'reverse':
-			rotated_operation.rotation = 'spawn';
-			break;
-		case 'right':
-			rotated_operation.rotation = 'left';
-			break;
-    }
+	for(let offset of kick_offsets){
+		let kicked_operation = operation.copy();
 
-    if (reverse) {
-        let kicks = get_180_kicks(rotated_operation, operation.rotation);
-        let result = [];
-        for (let kick of kicks) {
-            if (field.canFill(kick)) {
-                let temp = spin_180(kick, field);
-                if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
-            }
-        }
-        return result;
-    }
-
-    if (!field.canFill(rotated_operation)) {
-        let kicks = get_180_kicks(rotated_operation, operation.rotation);
-        for (kick of kicks) {
-            if (field.canFill(kick)) return kick;
-        }
-        return undefined;
-    }
-    return rotated_operation;
-}
-
-function get_cw_kicks(operation, initial_rotation) {
-    let result = [
-        operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy()
-    ]; // incredible
-    if (operation.type == 'I') {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->R
-                result[1].x += 1;
-                result[2].x -= 2;
-                result[3].x -= 2; result[3].y -= 1;
-                result[4].x += 1; result[4].y += 2;
-                break;
-            case 'right':  // R->2  
-                result[1].x -= 1;
-                result[2].x += 2;
-                result[3].x -= 1; result[3].y += 2;
-                result[4].x += 2; result[4].y -= 1;
-                break;
-            case 'reverse':  // 2->L
-                result[1].x += 2;
-                result[2].x -= 1;
-                result[3].x += 2; result[3].y += 1;
-                result[4].x -= 1; result[4].y -= 2;
-                break;
-            case 'left':  // L->0
-                result[1].x += 1;
-                result[2].x -= 2;
-                result[3].x += 1; result[3].y -= 2;
-                result[4].x -= 2; result[4].y += 1;
-                break;
-        }
-    } else {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->R
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x -= 1; result[4].y -= 2;
-                break;
-            case 'right':  // R->2  
-		case 'right':  // R->2
-            case 'right':  // R->2  
-                result[1].x += 1;
-                result[2].x += 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x += 1; result[4].y += 2;
-                break;
-            case 'reverse':  // 2->L
-                result[1].x += 1;
-                result[2].x += 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x += 1; result[4].y -= 2;
-                break;
-            case 'left':  // L->0
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x -= 1; result[4].y += 2;
-                break;
-        }
-    }
-    return result;
-}
-
-function get_ccw_kicks(operation, initial_rotation) {
-    let result = [
-        operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy()
-    ]; // incredible
-    if (operation.type == 'I') {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->L
-                result[1].x -= 1;
-                result[2].x += 2;
-                result[3].x += 2; result[3].y -= 1;
-                result[4].x -= 1; result[4].y += 2;
-                break;
-            case 'left':  // L->2 
-                result[1].x += 1;
-                result[2].x -= 2;
-                result[3].x += 1; result[3].y += 2;
-                result[4].x -= 2; result[4].y -= 1;
-                break;
-            case 'reverse':  // 2->R
-                result[1].x -= 2;
-                result[2].x += 1;
-                result[3].x -= 2; result[3].y += 1;
-                result[4].x += 1; result[4].y -= 2;
-                break;
-            case 'right':  // R->0
-                result[1].x -= 1;
-                result[2].x += 2;
-                result[3].x -= 1; result[3].y -= 2;
-                result[4].x += 2; result[4].y += 1;
-                break;
-        }
-    } else {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->L
-                result[1].x += 1;
-                result[2].x += 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x += 1; result[4].y -= 2;
-                break;
-            case 'left':  // L->2  
-		case 'left':  // L->2
-            case 'left':  // L->2  
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x -= 1; result[4].y += 2;
-                break;
-            case 'reverse':  // 2->R
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x -= 1; result[4].y -= 2;
-                break;
-            case 'right':  // R->0
-                result[1].x += 1;
-                result[2].x += 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x += 1; result[4].y += 2;
-                break;
-        }
-    }
-    return result;
-}
-
-function get_180_kicks(operation, initial_rotation) {
-    let result = [
-        operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy()
-    ]; // incredible
-    if (operation.type == 'I') {
-        switch (initial_rotation) { // using SRS+ kickset here
-            case 'spawn':  // 0->2
-                                  result[1].y += 1;
-                break;
-            case 'left':  // L->R  
-                result[1].x -= 1;
-                break;
-            case 'reverse':  // 2->0
-                                  result[1].y -= 1;
-                break;
-            case 'right':  // R->L
-                result[1].x += 1;
-                break;
-        }
-        // only 180 kick is the immobile one for I pieces I guess
-        return result.slice(0, 2);
-    } else {
-        switch (initial_rotation) { // using SRS+ kickset here
-            case 'spawn':  // 0->2
-                                  result[1].y += 1;
-                result[2].x += 1; result[2].y += 1;
-                result[3].x -= 1; result[3].y += 1;
-                result[4].x += 1;
-                result[5].x -= 1;
-                break;
-            case 'left':  // L->R  
-				case 'left':  // L->R
-            case 'left':  // L->R  
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y += 2;
-                result[3].x -= 1; result[3].y += 1;
-                                  result[4].y += 2;
-                                  result[5].y += 1;
-                break;
-            case 'reverse':  // 2->0
-                                  result[1].y -= 1;
-                result[2].x -= 1; result[2].y -= 1;
-                result[3].x += 1; result[3].y -= 1;
-                result[4].x -= 1;
-                result[5].x += 1;
-                break;
-            case 'right':  // R->L
-                result[1].x += 1;
-                result[2].x += 1; result[2].y += 2;
-                result[3].x += 1; result[3].y += 1;
-                                  result[4].y += 2;
-                                  result[5].y += 1;
-                break;
-        }
-    }
+		kicked_operation.x += offset[0];
+		kicked_operation.y += offset[1];
+		
+		results.push(kicked_operation);
+	}
+    
     return result;
 }
 
@@ -514,13 +287,13 @@ function is_placeable(op, field) { // bfs I think
             // try every possible type of movement
             let d_1_steps = [];
 
-            let temp = spin_cw(operation, field, true);
+            let temp = spin_with_kicks(operation, field, 'cw', true);
             if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
 
-            temp = spin_ccw(operation, field, true);
+            temp = spin_with_kicks(operation, field, 'ccw', true);
             if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
 
-            temp = spin_180(operation, field, true);
+            temp = spin_with_kicks(operation, field, '180', true);
             if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
             temp = move_up(operation, 1, field);
             if (temp !== undefined) d_1_steps.push(temp);
@@ -556,21 +329,21 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 
 	if (op.type != 'T') return -1;
 
-	let cw = vanilla_spin_cw(op.copy());
-	let ccw = vanilla_spin_ccw(op.copy());
+	let cw = vanilla_spin(op.copy(), 'cw');
+	let ccw = vanilla_spin(op.copy(), 'ccw');
 
 	if (field.canFill(cw)) return 0;
 	//if (field.canFill(ccw)) return 0;
 	//if (field.canFill(r180)) return 0;
 	// if any kickless rotation is unobstructed, the other two will also be
 
-	let cw_kicks = get_cw_kicks(cw, op.rotation);
-	let ccw_kicks = get_ccw_kicks(ccw, op.rotation);
+	let cw_kicks = get_kicks(cw, op.rotation, 'cw');
+	let ccw_kicks = get_kicks(ccw, op.rotation, 'ccw');
 
 	for (let kick of cw_kicks) {
 		if (field.canFill(kick)) { // try and reverse it
-			let temp = vanilla_spin_ccw(kick.copy());
-			let temp_kicks = get_ccw_kicks(temp, kick.rotation);
+			let temp = vanilla_spin(kick.copy(), 'ccw');
+			let temp_kicks = get_kicks(temp, kick.rotation, 'ccw');
 			for (let i = 1; i < 5; i++) {
 				temp_kick = temp_kicks[i];
 				if (field.canFill(temp_kick)) {
@@ -585,8 +358,8 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 	}
 	for (let kick of ccw_kicks) {
 		if (field.canFill(kick)) { // try and reverse it
-			let temp = vanilla_spin_cw(kick.copy());
-			let temp_kicks = get_cw_kicks(temp, kick.rotation);
+			let temp = vanilla_spin(kick.copy(), 'cw');
+			let temp_kicks = get_kicks(temp, kick.rotation, 'cw');
 			for (let i = 1; i < 5; i++) {
 				temp_kick = temp_kicks[i];
 				if (field.canFill(temp_kick)) {
@@ -601,15 +374,15 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 
 	// XXX probably wrong on e.g. v115@zgB8HeA8IeA8AeI8BeH8CeF8JetJJ and the mirror
 
-	if (GAME === GAME.TETRIO) {
+	if (GAME === GAMES.TETRIO) {
 		// not possible to get 180 t-spins on Jstris or guideline
-		let r180 = vanilla_spin_180(op.copy());
-		let r180_kicks = get_180_kicks(r180, op.rotation);
+		let r180 = vanilla_spin(op.copy(), '180');
+		let r180_kicks = get_kicks(r180, op.rotation, '180');
 
 		for (let kick of r180_kicks) {
 			if (field.canFill(kick)) { // try and reverse it
-				let temp = vanilla_spin_180(kick.copy());
-				let temp_kicks = get_180_kicks(temp, kick.rotation);
+				let temp = vanilla_spin(kick.copy(), '180');
+				let temp_kicks = get_kicks(temp, kick.rotation, '180');
 				for (let i = 1; i < temp_kicks.length; i++) {
 					temp_kick = temp_kicks[i];
 					if (field.canFill(temp_kick)) {
