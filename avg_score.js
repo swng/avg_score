@@ -162,7 +162,7 @@ function vanilla_spin(operation, rotation_type) {
 	let old_rotation_index = rotation_directions.indexOf(operation.rotation);
 
 	// rotate using the index
-	let rotated_index = (old_rotation_index + rotation_types[rotation_type]) % 4;
+	let rotated_index = ((old_rotation_index + rotation_types[rotation_type]) % 4 + 4) % 4;
 
 	// get new rotation direction
 	let new_rotation = rotation_directions[rotated_index];
@@ -202,7 +202,7 @@ function move_up(operation, number, field) {
 
 function spin_with_kicks(operation, field, rotation_type, reverse = false) {
     if (operation.type == 'O') return []; // let's not bother rotating O pieces
-    let rotated_operation = vanilla_spin(operation, rotation_type);
+    let rotated_operation = vanilla_spin(operation.copy(), rotation_type);
     
     if (reverse) {
         let kicks = get_kicks(rotated_operation, operation.rotation, rotation_type);
@@ -219,9 +219,9 @@ function spin_with_kicks(operation, field, rotation_type, reverse = false) {
     if (!field.canFill(rotated_operation)) {
         let kicks = get_kicks(rotated_operation, operation.rotation, rotation_type);
         for (let kick of kicks) {
-            if (field.canFill(kick)) return kick;
+            if (field.canFill(kick)) return [kick];
         }
-        return undefined;
+        return [undefined];
     }
 
 
@@ -232,7 +232,7 @@ function spin_with_kicks(operation, field, rotation_type, reverse = false) {
 function get_kicks(operation, initial_rotation, rotation_type) {
     let result = [];
 
-	let kick_offsets = kick_table[rotation_type][initial_rotation];
+	let kick_offsets = kick_table[rotation_type][operation.type][initial_rotation];
 
 	for(let offset of kick_offsets){
 		let kicked_operation = operation.copy();
@@ -240,7 +240,7 @@ function get_kicks(operation, initial_rotation, rotation_type) {
 		kicked_operation.x += offset[0];
 		kicked_operation.y += offset[1];
 		
-		results.push(kicked_operation);
+		result.push(kicked_operation);
 	}
     
     return result;
@@ -414,7 +414,6 @@ function get_score(
 	if (cumulative_rowsCleared === undefined) cumulative_rowsCleared = get_cumulative_rows_cleared(solution_pages);
 
 	if (base_field === undefined) base_field = solution_pages[0].field.copy();
-
 	if (base_viz === undefined) {
 		var base_viz = []; // vizualizer fumen for debugging purposes
 		base_viz.push({field: base_field});
