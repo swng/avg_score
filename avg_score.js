@@ -166,8 +166,8 @@ function move_up(operation, number, field) {
 }
 
 function spin_cw(operation, field, reverse = false) {
-    if (operation.type == 'O') return []; // let's not bother rotating O pieces
-    let rotated_operation = operation.copy();
+	if (operation.type == 'O') return []; // let's not bother rotating O pieces
+	let rotated_operation = operation.copy();
 	switch (operation.rotation) {
 		case 'spawn':
 			rotated_operation.rotation = 'right';
@@ -181,34 +181,34 @@ function spin_cw(operation, field, reverse = false) {
 		case 'left':
 			rotated_operation.rotation = 'spawn';
 			break;
-    }
-    
-    if (reverse) {
-        let kicks = get_cw_kicks(rotated_operation, operation.rotation);
-        let result = [];
-        for (let kick of kicks) {
-            if (field.canFill(kick)) {
-                let temp = spin_ccw(kick, field);
-                if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
-            }
-        }
-        return result;
-    }
+	}
 
-    if (!field.canFill(rotated_operation)) {
-        let kicks = get_cw_kicks(rotated_operation, operation.rotation);
-        for (let kick of kicks) {
-            if (field.canFill(kick)) return kick;
-        }
-        return undefined;
-    }
+	if (reverse) {
+		let kicks = get_cw_kicks(rotated_operation, operation.rotation);
+		let result = [];
+		for (let kick of kicks) {
+			if (field.canFill(kick)) {
+				let temp = spin_ccw(kick, field);
+				if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
+			}
+		}
+		return result;
+	}
+
+	if (!field.canFill(rotated_operation)) {
+		let kicks = get_cw_kicks(rotated_operation, operation.rotation);
+		for (let kick of kicks) {
+			if (field.canFill(kick)) return kick;
+		}
+		return undefined;
+	}
 
 
 	return rotated_operation;
 }
 
 function spin_ccw(operation, field, reverse = false) {
-    if (operation.type == 'O') return []; // let's not bother rotating O pieces
+	if (operation.type == 'O') return []; // let's not bother rotating O pieces
 	let rotated_operation = operation.copy();
 	switch (operation.rotation) {
 		case 'spawn':
@@ -223,35 +223,35 @@ function spin_ccw(operation, field, reverse = false) {
 		case 'right':
 			rotated_operation.rotation = 'spawn';
 			break;
-    }
+	}
 
-    if (reverse) {
-        let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
-        let result = [];
-        for (let kick of kicks) {
-            if (field.canFill(kick)) {
-                let temp = spin_cw(kick, field);
-                if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
-            }
-        }
-        return result;
-    }
+	if (reverse) {
+		let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
+		let result = [];
+		for (let kick of kicks) {
+			if (field.canFill(kick)) {
+				let temp = spin_cw(kick, field);
+				if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
+			}
+		}
+		return result;
+	}
 
-    if (!field.canFill(rotated_operation)) {
-        let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
-        for (kick of kicks) {
-            if (field.canFill(kick)) return kick;
-        }
-        return undefined;
-    }
+	if (!field.canFill(rotated_operation)) {
+		let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
+		for (kick of kicks) {
+			if (field.canFill(kick)) return kick;
+		}
+		return undefined;
+	}
 	return rotated_operation;
 }
 
 function spin_180(operation, field, reverse = false) {
-    if (operation.type == 'O') return []; // let's not bother rotating O pieces
-    let rotated_operation = operation.copy();
-    switch (operation.rotation) {
-        case 'spawn':
+	if (operation.type == 'O') return []; // let's not bother rotating O pieces
+	let rotated_operation = operation.copy();
+	switch (operation.rotation) {
+		case 'spawn':
 			rotated_operation.rotation = 'reverse';
 			break;
 		case 'left':
@@ -263,214 +263,304 @@ function spin_180(operation, field, reverse = false) {
 		case 'right':
 			rotated_operation.rotation = 'left';
 			break;
-    }
+	}
 
-    if (reverse) {
-        let kicks = get_180_kicks(rotated_operation, operation.rotation);
-        let result = [];
-        for (let kick of kicks) {
-            if (field.canFill(kick)) {
-                let temp = spin_180(kick, field);
-                if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
-            }
-        }
-        return result;
-    }
+	if (reverse) {
+		let kicks = get_180_kicks(rotated_operation, operation.rotation);
+		let result = [];
+		for (let kick of kicks) {
+			if (field.canFill(kick)) {
+				let temp = spin_180(kick, field);
+				if (temp != undefined && temp.x == operation.x && temp.y == operation.y) result.push(kick);
+			}
+		}
+		return result;
+	}
 
-    if (!field.canFill(rotated_operation)) {
-        let kicks = get_180_kicks(rotated_operation, operation.rotation);
-        for (kick of kicks) {
-            if (field.canFill(kick)) return kick;
-        }
-        return undefined;
-    }
-    return rotated_operation;
+	if (!field.canFill(rotated_operation)) {
+		let kicks = get_180_kicks(rotated_operation, operation.rotation);
+		for (kick of kicks) {
+			if (field.canFill(kick)) return kick;
+		}
+		return undefined;
+	}
+	return rotated_operation;
 }
 
 function get_cw_kicks(operation, initial_rotation) {
-    let result = [
-        operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy()
-    ]; // incredible
-    if (operation.type == 'I') {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->R
-                result[1].x += 1;
-                result[2].x -= 2;
-                result[3].x -= 2; result[3].y -= 1;
-                result[4].x += 1; result[4].y += 2;
-                break;
-            case 'right':  // R->2  
-                result[1].x -= 1;
-                result[2].x += 2;
-                result[3].x -= 1; result[3].y += 2;
-                result[4].x += 2; result[4].y -= 1;
-                break;
-            case 'reverse':  // 2->L
-                result[1].x += 2;
-                result[2].x -= 1;
-                result[3].x += 2; result[3].y += 1;
-                result[4].x -= 1; result[4].y -= 2;
-                break;
-            case 'left':  // L->0
-                result[1].x += 1;
-                result[2].x -= 2;
-                result[3].x += 1; result[3].y -= 2;
-                result[4].x -= 2; result[4].y += 1;
-                break;
-        }
-    } else {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->R
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x -= 1; result[4].y -= 2;
-                break;
-            case 'right':  // R->2  
-		case 'right':  // R->2
-            case 'right':  // R->2  
-                result[1].x += 1;
-                result[2].x += 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x += 1; result[4].y += 2;
-                break;
-            case 'reverse':  // 2->L
-                result[1].x += 1;
-                result[2].x += 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x += 1; result[4].y -= 2;
-                break;
-            case 'left':  // L->0
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x -= 1; result[4].y += 2;
-                break;
-        }
-    }
-    return result;
+	let result = Array(5).fill().map(_ => operation.copy());
+	if (operation.type == 'I') {
+		if (GAME === GAMES.TETRIO) {
+			switch (initial_rotation) {
+				case 'spawn':  // 0->R
+					result[0].x += 1; result[0].y += 0;
+					result[1].x += 2; result[1].y += 0;
+					result[2].x +=-1; result[2].y += 0;
+					result[3].x +=-1; result[3].y +=-1;
+					result[4].x += 2; result[4].y += 2;
+					break;
+				case 'right':  // R->2
+					result[0].x += 0; result[0].y +=-1;
+					result[1].x +=-1; result[1].y +=-1;
+					result[2].x += 2; result[2].y +=-1;
+					result[3].x +=-1; result[3].y += 1;
+					result[4].x += 2; result[4].y +=-2;
+					break;
+				case 'reverse':  // 2->L
+					result[0].x +=-1; result[0].y += 0;
+					result[1].x += 1; result[1].y += 0;
+					result[2].x +=-2; result[2].y += 0;
+					result[3].x += 1; result[3].y += 1;
+					result[4].x +=-2; result[4].y +=-2;
+					break;
+				case 'left':  // L->0
+					result[0].x += 0; result[0].y += 1;
+					result[1].x += 1; result[1].y += 1;
+					result[2].x +=-2; result[2].y += 1;
+					result[3].x += 1; result[3].y +=-1;
+					result[4].x +=-2; result[4].y += 2;
+					break;
+			}
+		} else {
+			switch (initial_rotation) {
+				case 'spawn':  // 0->R
+					result[0].x += 1; result[0].y += 0;
+					result[1].x +=-1; result[1].y += 0;
+					result[2].x += 2; result[2].y += 0;
+					result[3].x +=-1; result[3].y +=-1;
+					result[4].x += 2; result[4].y += 2;
+					break;
+				case 'right':  // R->2
+					result[0].x += 0; result[0].y +=-1;
+					result[1].x +=-1; result[1].y +=-1;
+					result[2].x += 2; result[2].y +=-1;
+					result[3].x +=-1; result[3].y += 1;
+					result[4].x += 2; result[4].y +=-2;
+					break;
+				case 'reverse':  // 2->L
+					result[0].x +=-1; result[0].y += 0;
+					result[1].x += 1; result[1].y += 0;
+					result[2].x +=-2; result[2].y += 0;
+					result[3].x += 1; result[3].y += 1;
+					result[4].x +=-2; result[4].y +=-2;
+					break;
+				case 'left':  // L->0
+					result[0].x += 0; result[0].y += 1;
+					result[1].x += 1; result[1].y += 1;
+					result[2].x +=-2; result[2].y += 1;
+					result[3].x += 1; result[3].y +=-1;
+					result[4].x +=-2; result[4].y += 2;
+					break;
+			}
+		}
+	} else {
+		switch (initial_rotation) {
+			case 'spawn':  // 0->R
+				result[1].x -= 1;
+				result[2].x -= 1; result[2].y += 1;
+				                  result[3].y -= 2;
+				result[4].x -= 1; result[4].y -= 2;
+				break;
+			case 'right':  // R->2
+				result[1].x += 1;
+				result[2].x += 1; result[2].y -= 1;
+				                  result[3].y += 2;
+				result[4].x += 1; result[4].y += 2;
+				break;
+			case 'reverse':  // 2->L
+				result[1].x += 1;
+				result[2].x += 1; result[2].y += 1;
+				                  result[3].y -= 2;
+				result[4].x += 1; result[4].y -= 2;
+				break;
+			case 'left':  // L->0
+				result[1].x -= 1;
+				result[2].x -= 1; result[2].y -= 1;
+				                  result[3].y += 2;
+				result[4].x -= 1; result[4].y += 2;
+				break;
+		}
+	}
+	return result;
 }
 
 function get_ccw_kicks(operation, initial_rotation) {
-    let result = [
-        operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy()
-    ]; // incredible
-    if (operation.type == 'I') {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->L
-                result[1].x -= 1;
-                result[2].x += 2;
-                result[3].x += 2; result[3].y -= 1;
-                result[4].x -= 1; result[4].y += 2;
-                break;
-            case 'left':  // L->2 
-                result[1].x += 1;
-                result[2].x -= 2;
-                result[3].x += 1; result[3].y += 2;
-                result[4].x -= 2; result[4].y -= 1;
-                break;
-            case 'reverse':  // 2->R
-                result[1].x -= 2;
-                result[2].x += 1;
-                result[3].x -= 2; result[3].y += 1;
-                result[4].x += 1; result[4].y -= 2;
-                break;
-            case 'right':  // R->0
-                result[1].x -= 1;
-                result[2].x += 2;
-                result[3].x -= 1; result[3].y -= 2;
-                result[4].x += 2; result[4].y += 1;
-                break;
-        }
-    } else {
-        switch (initial_rotation) {
-            case 'spawn':  // 0->L
-                result[1].x += 1;
-                result[2].x += 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x += 1; result[4].y -= 2;
-                break;
-            case 'left':  // L->2  
-		case 'left':  // L->2
-            case 'left':  // L->2  
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x -= 1; result[4].y += 2;
-                break;
-            case 'reverse':  // 2->R
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y += 1;
-                                  result[3].y -= 2;
-                result[4].x -= 1; result[4].y -= 2;
-                break;
-            case 'right':  // R->0
-                result[1].x += 1;
-                result[2].x += 1; result[2].y -= 1;
-                                  result[3].y += 2;
-                result[4].x += 1; result[4].y += 2;
-                break;
-        }
-    }
-    return result;
+	let result = Array(5).fill().map(_ => operation.copy());
+	if (operation.type == 'I') {
+		if (GAME === GAMES.TETRIO) {
+			switch (initial_rotation) {
+				case 'spawn':  // 0->L
+					result[0].x += 0; result[0].y +=-1;
+					result[1].x +=-1; result[1].y +=-1;
+					result[2].x += 2; result[2].y +=-1;
+					result[3].x += 2; result[3].y +=-2;
+					result[4].x +=-1; result[4].y += 1;
+					break;
+				case 'left':  // L->2
+					result[0].x += 1; result[0].y += 0;
+					result[1].x += 2; result[1].y += 0;
+					result[2].x +=-1; result[2].y += 0;
+					result[3].x += 2; result[3].y += 2;
+					result[4].x +=-1; result[4].y +=-1;
+					break;
+				case 'reverse':  // 2->R
+					result[0].x += 0; result[0].y += 1;
+					result[1].x +=-2; result[1].y += 1;
+					result[2].x += 1; result[2].y += 1;
+					result[3].x +=-2; result[3].y += 2;
+					result[4].x += 1; result[4].y +=-1;
+					break;
+				case 'right':  // R->0
+					result[0].x +=-1; result[0].y += 0;
+					result[1].x +=-2; result[1].y += 0;
+					result[2].x += 1; result[2].y += 0;
+					result[3].x +=-2; result[3].y +=-2;
+					result[4].x += 1; result[4].y += 1;
+					break;
+			}
+		} else {
+			switch (initial_rotation) {
+				case 'spawn':  // 0->L
+					result[0].x += 0; result[0].y +=-1;
+					result[1].x +=-1; result[1].y +=-1;
+					result[2].x += 2; result[2].y +=-1;
+					result[3].x +=-1; result[3].y += 1;
+					result[4].x += 2; result[4].y +=-2;
+					break;
+				case 'left':  // L->2
+					result[0].x += 1; result[0].y += 0;
+					result[1].x +=-1; result[1].y += 0;
+					result[2].x += 2; result[2].y += 0;
+					result[3].x +=-1; result[3].y +=-1;
+					result[4].x += 2; result[4].y += 2;
+					break;
+				case 'reverse':  // 2->R
+					result[0].x += 0; result[0].y += 1;
+					result[1].x += 1; result[1].y += 1;
+					result[2].x +=-2; result[2].y += 1;
+					result[3].x += 1; result[3].y +=-1;
+					result[4].x +=-2; result[4].y += 2;
+					break;
+				case 'right':  // R->0
+					result[0].x +=-1; result[0].y += 0;
+					result[1].x += 1; result[1].y += 0;
+					result[2].x +=-2; result[2].y += 0;
+					result[3].x += 1; result[3].y += 1;
+					result[4].x +=-2; result[4].y +=-2;
+					break;
+			}
+		}
+	} else {
+		switch (initial_rotation) {
+			case 'spawn':  // 0->L
+				result[1].x += 1;
+				result[2].x += 1; result[2].y += 1;
+				                  result[3].y -= 2;
+				result[4].x += 1; result[4].y -= 2;
+				break;
+			case 'left':  // L->2
+				result[1].x -= 1;
+				result[2].x -= 1; result[2].y -= 1;
+				                  result[3].y += 2;
+				result[4].x -= 1; result[4].y += 2;
+				break;
+			case 'reverse':  // 2->R
+				result[1].x -= 1;
+				result[2].x -= 1; result[2].y += 1;
+				                  result[3].y -= 2;
+				result[4].x -= 1; result[4].y -= 2;
+				break;
+			case 'right':  // R->0
+				result[1].x += 1;
+				result[2].x += 1; result[2].y -= 1;
+				                  result[3].y += 2;
+				result[4].x += 1; result[4].y += 2;
+				break;
+		}
+	}
+	return result;
 }
 
 function get_180_kicks(operation, initial_rotation) {
-    let result = [
-        operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy(), operation.copy()
-    ]; // incredible
-    if (operation.type == 'I') {
-        switch (initial_rotation) { // using SRS+ kickset here
-            case 'spawn':  // 0->2
-                                  result[1].y += 1;
-                break;
-            case 'left':  // L->R  
-                result[1].x -= 1;
-                break;
-            case 'reverse':  // 2->0
-                                  result[1].y -= 1;
-                break;
-            case 'right':  // R->L
-                result[1].x += 1;
-                break;
-        }
-        // only 180 kick is the immobile one for I pieces I guess
-        return result.slice(0, 2);
-    } else {
-        switch (initial_rotation) { // using SRS+ kickset here
-            case 'spawn':  // 0->2
-                                  result[1].y += 1;
-                result[2].x += 1; result[2].y += 1;
-                result[3].x -= 1; result[3].y += 1;
-                result[4].x += 1;
-                result[5].x -= 1;
-                break;
-            case 'left':  // L->R  
+	if (GAME === GAMES.GUIDELINE) {throw 'guideline has no 180';}
+	if (operation.type == 'I') {
+		// Jstris and tetr.io have the same 180 I kicks
+		let result = Array(2).fill().map(_ => operation.copy());
+		switch (initial_rotation) {
+			case 'spawn':  // 0->2
+				result[0].x += 1; result[0].y -= 1;
+				result[1].x += 1; result[1].y += 0;
+				break;
+			case 'left':  // L->R
+				result[0].x += 1; result[0].y += 1;
+				result[1].x += 0; result[1].y += 1;
+				break;
+			case 'reverse':	 // 2->0
+				result[0].x -= 1; result[0].y += 1;
+				result[1].x -= 1; result[1].y += 0;
+				break;
+			case 'right':  // R->L
+				result[0].x -= 1; result[0].y -= 1;
+				result[1].x += 0; result[1].y -= 1;
+				break;
+		}
+		// only 180 kick is the immobile one for I pieces I guess
+		return result.slice(0, 2);
+	}
+	let result;
+	switch (GAME) {
+		case GAMES.TETRIO:
+			result = Array(6).fill().map(_ => operation.copy());
+			switch (initial_rotation) { // using SRS+ kickset here
+				case 'spawn':  // 0->2
+					                  result[1].y += 1;
+					result[2].x += 1; result[2].y += 1;
+					result[3].x -= 1; result[3].y += 1;
+					result[4].x += 1;
+					result[5].x -= 1;
+					break;
 				case 'left':  // L->R
-            case 'left':  // L->R  
-                result[1].x -= 1;
-                result[2].x -= 1; result[2].y += 2;
-                result[3].x -= 1; result[3].y += 1;
-                                  result[4].y += 2;
-                                  result[5].y += 1;
-                break;
-            case 'reverse':  // 2->0
-                                  result[1].y -= 1;
-                result[2].x -= 1; result[2].y -= 1;
-                result[3].x += 1; result[3].y -= 1;
-                result[4].x -= 1;
-                result[5].x += 1;
-                break;
-            case 'right':  // R->L
-                result[1].x += 1;
-                result[2].x += 1; result[2].y += 2;
-                result[3].x += 1; result[3].y += 1;
-                                  result[4].y += 2;
-                                  result[5].y += 1;
-                break;
-        }
-    }
-    return result;
+					result[1].x -= 1;
+					result[2].x -= 1; result[2].y += 2;
+					result[3].x -= 1; result[3].y += 1;
+					                  result[4].y += 2;
+					                  result[5].y += 1;
+					break;
+				case 'reverse':  // 2->0
+					                  result[1].y -= 1;
+					result[2].x -= 1; result[2].y -= 1;
+					result[3].x += 1; result[3].y -= 1;
+					result[4].x -= 1;
+					result[5].x += 1;
+					break;
+				case 'right':  // R->L
+					result[1].x += 1;
+					result[2].x += 1; result[2].y += 2;
+					result[3].x += 1; result[3].y += 1;
+					                  result[4].y += 2;
+					                  result[5].y += 1;
+					break;
+			}
+			return result;
+		case GAMES.JSTRIS:
+			result = Array(2).fill().map(_ => operation.copy());
+			switch (initial_rotation) {
+				case 'spawn':  // 0->2
+					result[1].y += 1;
+					break;
+				case 'left':  // L->R
+					result[1].x -= 1;
+					break;
+				case 'reverse':  // 2->0
+					result[1].y -= 1;
+					break;
+				case 'right':  // R->L
+					result[1].x += 1;
+					break;
+			}
+			return result;
+	}
+	return result;
 }
 
 function reverse_hd(base_operation, field) {
@@ -488,65 +578,65 @@ function op_string(operation) {
 }
 
 function is_placeable(op, field) { // bfs I think
-    // create a queue and add the initial operation
-    let queue = []
-    queue.push(op);
+	// create a queue and add the initial operation
+	let queue = []
+	queue.push(op);
 
-    // create a set to store visited operations
-    let visited = new Set();
+	// create a set to store visited operations
+	let visited = new Set();
 
-    // loop until the queue is empty
-    while (queue.length > 0) {
-        let operation = queue.pop();
+	// loop until the queue is empty
+	while (queue.length > 0) {
+		let operation = queue.pop();
 
-        // check if the operation is placeable
-        if (field.canFill(operation)) {
-            // check if the piece has reached the top of the board
-            let highestPoint = reverse_hd(operation, field);
-            if (highestPoint.y === 20) {
-                // the piece has been placed, return the cost
-                return true;
-            }
+		// check if the operation is placeable
+		if (field.canFill(operation)) {
+			// check if the piece has reached the top of the board
+			let highestPoint = reverse_hd(operation, field);
+			if (highestPoint.y === 20) {
+				// the piece has been placed, return the cost
+				return true;
+			}
 
-            // mark the operation as visited
-            visited.add(op_string(operation));
+			// mark the operation as visited
+			visited.add(op_string(operation));
 
-            // try every possible type of movement
-            let d_1_steps = [];
+			// try every possible type of movement
+			let d_1_steps = [];
 
-            let temp = spin_cw(operation, field, true);
-            if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
+			let temp = spin_cw(operation, field, true);
+			if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
 
-            temp = spin_ccw(operation, field, true);
-            if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
+			temp = spin_ccw(operation, field, true);
+			if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
 
-            temp = spin_180(operation, field, true);
-            if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
-            temp = move_up(operation, 1, field);
-            if (temp !== undefined) d_1_steps.push(temp);
+			temp = spin_180(operation, field, true);
+			if (temp.length !== 0) d_1_steps = d_1_steps.concat(temp);
+			temp = move_up(operation, 1, field);
+			if (temp !== undefined) d_1_steps.push(temp);
 
-            temp = move_right(operation, 1, field);
-            if (temp !== undefined) d_1_steps.push(temp);
+			temp = move_right(operation, 1, field);
+			if (temp !== undefined) d_1_steps.push(temp);
 
-            temp = move_left(operation, 1, field);
-            if (temp !== undefined) d_1_steps.push(temp);
+			temp = move_left(operation, 1, field);
+			if (temp !== undefined) d_1_steps.push(temp);
 
-            // add the next steps to the queue
-            for (let step of d_1_steps) {
-                let stepString = op_string(step);
-                // check if the step has been visited or is already in the queue
-                if (!visited.has(stepString)) {
-                    // calculate the heuristic and cost for this step
+			// add the next steps to the queue
+			for (let step of d_1_steps) {
+				let stepString = op_string(step);
+				// check if the step has been visited or is already in the queue
+				if (!visited.has(stepString)) {
+					// calculate the heuristic and cost for this step
 
-                    // add the step to the queue
-                    queue.push(step);
-                }
-            }
-        }
-    }
+					// add the step to the queue
+					queue.push(step);
+				}
+			}
+		}
+	}
 
-    // if the queue is empty and no solution has been found, return false
-    return false;
+	// if the queue is empty and no solution has been found, return false
+	return false;
 }
 
 function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, returns the kick index (0-4) of the last spin used
@@ -833,12 +923,12 @@ function get_score(
 		}
 	}
 
-    if (results.length == 0) { // no piece placement applied to this piece, this path is a failure
-        // return {score: -3000, extra: [], pcs: +false, pc_end: false, b2b_end: false}
+	if (results.length == 0) { // no piece placement applied to this piece, this path is a failure
+		// return {score: -3000, extra: [], pcs: +false, pc_end: false, b2b_end: false}
 		// return -3000; // may want to just return -30000 if working with non *p7 solution queues with dupes
 		// console.log(queue, encoder.encode(base_viz));
-        // console.log(base_field.str())
-        // console.log(encoder.encode(solution_pages))
+		// console.log(base_field.str())
+		// console.log(encoder.encode(solution_pages))
 		throw "solution path fail; does solution queues have dupes?";
 	}
 	return results.reduce((so0, so1) => pick_better_score(so0, so1));
@@ -858,24 +948,24 @@ function pick_better_score(so0, so1) {
 }
 
 function extra_string(extras) {
-    let result = ""
-    for (extra of extras) {
-        // {"lines_cleared":2,"tspin":true,"mini":false,"b2b":true}
-        // result += JSON.stringify(extra);
-        let temp = "";
-        if (extra.b2b) temp += "B2B "
-        if (extra.tspin) {
-            temp += "TS";
-            if (extra.mini) temp += "M";
-            temp += "0SDT"[extra.lines_cleared];
-        }
-        if (extra.lines_cleared == 4) temp += "quad";
+	let result = ""
+	for (extra of extras) {
+		// {"lines_cleared":2,"tspin":true,"mini":false,"b2b":true}
+		// result += JSON.stringify(extra);
+		let temp = "";
+		if (extra.b2b) temp += "B2B "
+		if (extra.tspin) {
+			temp += "TS";
+			if (extra.mini) temp += "M";
+			temp += "0SDT"[extra.lines_cleared];
+		}
+		if (extra.lines_cleared == 4) temp += "quad";
 
-        result += temp;
+		result += temp;
 
-    }
+	}
 
-    return result;
+	return result;
 }
 
 
@@ -965,7 +1055,7 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 	let num_pc_queues = 0;
 	let num_extra_queues = 0;
 	let num_b2b_queues = 0;
-    let extras = {};
+	let extras = {};
 	for (let queue of queues) {
 		let hold_reorderings = hold_reorders(queue);
 		let max_score_obj;
@@ -982,16 +1072,16 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 				let extra_str = extra_string(max_score_obj.extra);
 				//if (extra_str === '[{"lines_cleared":1,"tspin":true,"mini":false,"b2b":true}]') {console.log(queue, max_score_obj);}
 				if (!extras[extra_str]) {extras[extra_str] = 0;}
-                extras[extra_str]++;
-                
-            }
+				extras[extra_str]++;
+
+			}
 		}
 	}
 	//console.log(all_scores.length);
 	//console.log(`covered: ${num_covered_queues}/${queues.length} = ${(num_covered_queues/queues.length).toFixed(4)}`);
 	//console.log(`PC: ${num_pc_queues}/${queues.length} = ${(num_pc_queues/queues.length).toFixed(4)}`);
 	//console.log(`extra: ${num_extra_queues}/${queues.length} = ${(num_extra_queues/queues.length).toFixed(4)}`);
-    console.log(extras);
+	console.log(extras);
 	//console.log(`b2b: ${num_b2b_queues}/${queues.length} = ${(num_b2b_queues/queues.length).toFixed(4)}`);
 	return ({
 		average_covered_score: all_scores.reduce((a, b) => a + b) / all_scores.length,
@@ -1022,5 +1112,5 @@ function generate_all_permutations(l)
 
 let queues = generate_all_permutations('LJSZIOT').map(q => q.join(''));
 
-let results = calculate_all_scores(queues, loadPathCSV('output/path.csv'), true, 1);
+let results = calculate_all_scores(queues, loadPathCSV('path.csv'), true, 1);
 console.log(results);
