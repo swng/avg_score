@@ -1,4 +1,4 @@
-// v2.0
+// v2.1
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
@@ -691,7 +691,7 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 
 	// XXX probably wrong on e.g. v115@zgB8HeA8IeA8AeI8BeH8CeF8JetJJ and the mirror
 
-	if (GAME === GAME.TETRIO) {
+	if (GAME === GAMES.TETRIO) {
 		// not possible to get 180 t-spins on Jstris or guideline
 		let r180 = vanilla_spin_180(op.copy());
 		let r180_kicks = get_180_kicks(r180, op.rotation);
@@ -917,19 +917,19 @@ function get_score(
 				// console.log(queue, encoder.encode(solution_pages));
 				// console.log(encoder.encode(viz));
 				// console.log(field.str(), op, global_y, rowsCleared);
-				throw "solution path fail; does solution queue have dupes?";
+				//throw "solution path fail; does solution queue have dupes?";
 				// return 0; // piece could not lock, solution and queue were incompatible
 			}
 		}
 	}
 
 	if (results.length == 0) { // no piece placement applied to this piece, this path is a failure
-		// return {score: -3000, extra: [], pcs: +false, pc_end: false, b2b_end: false}
+		return {score: -3000, extra: [], pcs: +false, pc_end: false, b2b_end: false}
 		// return -3000; // may want to just return -30000 if working with non *p7 solution queues with dupes
 		// console.log(queue, encoder.encode(base_viz));
 		// console.log(base_field.str())
 		// console.log(encoder.encode(solution_pages))
-		throw "solution path fail; does solution queues have dupes?";
+		//throw "solution path fail; does solution queues have dupes?";
 	}
 	return results.reduce((so0, so1) => pick_better_score(so0, so1));
 }
@@ -1006,12 +1006,26 @@ function loadPathCSV(filename) {
 	return data;
 }
 
+function writeCSV(filename, data)
+{
+	let csv = '';
+	let keys = Object.keys(data);
+	let key = 'sequence';
+	csv += `${key},${data[key].join(',')}\n`;
+	for (key of keys) {
+		if (key === 'sequence') {continue;}
+		csv += `${key},${data[key].join(',')}\n`;
+	}
+	fs.writeFileSync(filename, csv);
+}
+
 function calculate_all_scores(
 queues,
 data_nohold,
 base_b2b = true, // should be true unless it's a skim setup
 base_combo = 1, // should be 1 unless TSD in DPC setup was done early
 b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800 for TD
+score_cover_filename = undefined, // .csv file to output score cover to
 ) {
 	//data_nohold = loadCSV('output/cover_nohold.csv');
 
@@ -1019,6 +1033,7 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 	let solutions_cumulative_rows_cleared = [];
 
 	let nohold_queues = Object.keys(data_nohold).filter(q => q !== 'sequence' && q !== '');
+	let nohold_queues_set = new Set(nohold_queues);
 
 	for (let index = 0; index < data_nohold['sequence'].length; index++) {
 		// load the objects of all the decoded fumens
@@ -1029,11 +1044,13 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 	let all_scores = [];
 
 	let score_by_nohold_queue = {};
+	let solution_scores_by_nohold_queue = {};
 
 	for (let queue of nohold_queues) {
 		let max_score_obj;
 		let max_queue = '';
 		let max_sol_index = 0;
+		let all_sol_scores = Array(solutions.length).fill(-1);
 		for (let j = 0; j < data_nohold[queue].length; j++) {
 			if (data_nohold[queue][j] == 'O') {
 				let pages = solutions[j];
@@ -1041,6 +1058,7 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 				// compute it
 				// queue, solution pages, initial b2b, initial combo, b2b end bonus
 				let score_obj = get_score(queue, pages, base_b2b, base_combo, b2b_end_bonus, cumulative_rowsCleared);
+				all_sol_scores[j] = score_obj.score;
 				if (max_score_obj !== pick_better_score(score_obj, max_score_obj)) {
 					max_score_obj = score_obj;
 					max_queue = queue;
@@ -1049,6 +1067,7 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 			}
 		}
 		score_by_nohold_queue[queue] = max_score_obj;
+		solution_scores_by_nohold_queue[queue] = all_sol_scores;
 	}
 
 	let num_covered_queues = 0;
@@ -1056,6 +1075,7 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 	let num_extra_queues = 0;
 	let num_b2b_queues = 0;
 	let extras = {};
+	let score_cover_data = {sequence: data_nohold['sequence']};
 	for (let queue of queues) {
 		let hold_reorderings = hold_reorders(queue);
 		let max_score_obj;
@@ -1075,6 +1095,15 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 				extras[extra_str]++;
 
 			}
+			let max_score = max_score_obj.score;
+			let score_cover_row = Array(solutions.length).fill(-1);
+			for (let hold_queue of hold_reorderings) {
+				for (let i = 0; i < solutions.length; i++) {
+					if (!nohold_queues_set.has(hold_queue)) {continue;}
+					score_cover_row[i] = Math.max(score_cover_row[i], solution_scores_by_nohold_queue[hold_queue][i]);
+				}
+			}
+			score_cover_data[queue] = score_cover_row;
 		}
 	}
 	//console.log(all_scores.length);
@@ -1083,8 +1112,9 @@ b2b_end_bonus = 0, // ~0 for 1st, 300 for SDPC, 500 for SDPC w/ TD fallback, 800
 	//console.log(`extra: ${num_extra_queues}/${queues.length} = ${(num_extra_queues/queues.length).toFixed(4)}`);
 	console.log(extras);
 	//console.log(`b2b: ${num_b2b_queues}/${queues.length} = ${(num_b2b_queues/queues.length).toFixed(4)}`);
+	if (score_cover_filename) {writeCSV(score_cover_filename, score_cover_data);}
 	return ({
-		average_covered_score: all_scores.reduce((a, b) => a + b) / all_scores.length,
+		average_covered_score: all_scores.length > 0 ? all_scores.reduce((a, b) => a + b) / all_scores.length : 0,
 		num_covered_queues,
 		num_pc_queues,
 		num_extra_queues,
@@ -1110,7 +1140,14 @@ function generate_all_permutations(l)
 		.flat(1);
 }
 
-let queues = generate_all_permutations('LJSZIOT').map(q => q.join(''));
+let queues = generate_all_permutations('LJSZIOT').map(q => 'T'+q.join(''));
 
-let results = calculate_all_scores(queues, loadPathCSV('path.csv'), true, 1);
+let results = calculate_all_scores(
+queues,
+loadPathCSV('output/path.csv'), // loadCSV('output/cover.csv')
+false, // initial b2b
+1, // initial combo
+0, // b2b end bonus
+'output/score_cover.csv', // score cover file
+);
 console.log(results);
