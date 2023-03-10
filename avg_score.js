@@ -74,7 +74,7 @@ function get_cumulative_rows_cleared(solution_pages) {
 		}
 		for (let row of temp_rowsCleared) rowsCleared.push(row);
 		testing_field.clearLine();
-		rowsCleared.sort();
+		rowsCleared.sort(function(a,b){return a-b});
 		cumulative_rowsCleared.push(rowsCleared.slice());
 	}
 
@@ -777,7 +777,7 @@ function get_score(
 					if (line_cleared) temp_rowsCleared.add(clearedOffset(rowsCleared, y));
 				}
 				for (let row of temp_rowsCleared) rowsCleared.push(row);
-				rowsCleared.sort();
+				rowsCleared.sort(function(a,b){return a-b});
 				let lines_cleared = temp_rowsCleared.size;
 
 				// console.log(lines_cleared);
