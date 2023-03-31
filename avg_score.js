@@ -1,4 +1,4 @@
-//2.1
+//v2.1
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
@@ -1170,7 +1170,11 @@ function sfinder_all_permutations(input) {
 
   // Generate all permutations for each input
   const permutations = inputs.map(input => {
-    const [bagWithBrackets, permutationLength] = input.split('p');
+    let [bagWithBrackets, permutationLength] = input.split('p');
+		if (typeof permutationLength === 'undefined') {
+  	 	permutationLength = 1;
+		}
+
     const bag = bagWithBrackets.replace(/\*/g, '[IOSZJLT]').replace(/\[|\]/g, '');
 
     return generate_permutations(bag, permutationLength);
@@ -1199,8 +1203,7 @@ function generate_all_permutations(l)
 		.flat(1);
 }
 
-let queues = sfinder_all_permutations('[I]p1,*p3');
-console.log(queues)
+let queues = sfinder_all_permutations('I,*p3');
 queues = queues.slice()
 
 let results = calculate_all_scores(
