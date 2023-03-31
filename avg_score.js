@@ -1034,6 +1034,7 @@ score_cover_filename = undefined, // .csv file to output score cover to
 
 	let nohold_queues = Object.keys(data_nohold).filter(q => q !== 'sequence' && q !== '');
 	let nohold_queues_set = new Set(nohold_queues);
+	longestlength = nohold_queues[0].length;
 
 	for (let index = 0; index < data_nohold['sequence'].length; index++) {
 		// load the objects of all the decoded fumens
@@ -1077,9 +1078,11 @@ score_cover_filename = undefined, // .csv file to output score cover to
 	let extras = {};
 	let score_cover_data = {sequence: data_nohold['sequence']};
 	for (let queue of queues) {
-		let hold_reorderings = hold_reorders(queue);
+		let hold_reorderings = hold_reorders(queue)
 		let max_score_obj;
 		for (let hold_queue of hold_reorderings) {
+			hold_queue = hold_queue.slice(0, longestlength)
+
 			max_score_obj = pick_better_score(max_score_obj, score_by_nohold_queue[hold_queue]);
 		}
 		if (max_score_obj) {
@@ -1203,8 +1206,36 @@ function generate_all_permutations(l)
 		.flat(1);
 }
 
-let queues = sfinder_all_permutations('I,*p3');
-queues = queues.slice()
+function getlength(pathtofile) {
+	const filePath = 'output/path.csv';
+
+	// Read the CSV file
+	fs.readFile(filePath, 'utf-8', (err, data) => {
+	  if (err) {
+	    console.error(err);
+	    return;
+	  }
+
+	  // Split the CSV data into an array of rows
+	  const rows = data.split('\n');
+
+	  // Get the second row (index 1)
+	  const secondRow = rows[1];
+
+	  // Split the row into an array of values
+	  const values = secondRow.split(',');
+
+	  // Get the length of the first value
+	  const length = values[0].length;
+
+	  // Log the length to the console
+		console.log(length)
+	  return(length);
+	});
+}
+
+let queues = sfinder_all_permutations('*p7*');
+console.log(queues)
 
 let results = calculate_all_scores(
 queues,
