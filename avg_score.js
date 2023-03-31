@@ -1,4 +1,4 @@
-// v2.1
+//v2.1
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
@@ -1034,6 +1034,7 @@ score_cover_filename = undefined, // .csv file to output score cover to
 
 	let nohold_queues = Object.keys(data_nohold).filter(q => q !== 'sequence' && q !== '');
 	let nohold_queues_set = new Set(nohold_queues);
+	longestlength = nohold_queues[0].length;
 
 	for (let index = 0; index < data_nohold['sequence'].length; index++) {
 		// load the objects of all the decoded fumens
@@ -1077,9 +1078,11 @@ score_cover_filename = undefined, // .csv file to output score cover to
 	let extras = {};
 	let score_cover_data = {sequence: data_nohold['sequence']};
 	for (let queue of queues) {
-		let hold_reorderings = hold_reorders(queue);
+		let hold_reorderings = hold_reorders(queue)
 		let max_score_obj;
 		for (let hold_queue of hold_reorderings) {
+			hold_queue = hold_queue.slice(0, longestlength)
+
 			max_score_obj = pick_better_score(max_score_obj, score_by_nohold_queue[hold_queue]);
 		}
 		if (max_score_obj) {
@@ -1122,6 +1125,69 @@ score_cover_filename = undefined, // .csv file to output score cover to
 	});
 }
 
+function generate_permutations(bag, permutationLength) {
+  const elements = bag.split('');
+
+  let permutations = [[]];
+  const result = new Set();
+
+  // Generate all permutations of the given length
+  for (let i = 0; i < permutationLength; i++) {
+    permutations = permutations.flatMap(p =>
+      elements
+        .filter(e => !p.includes(e))
+        .map(e => p.concat(e))
+    );
+  }
+
+  // Convert each permutation back to a string and add to the result set
+  permutations.forEach(p => result.add(p.join('')));
+
+  // Convert the result set to an array and return it
+  return Array.from(result);
+}
+
+function combine_lists(lists) {
+  if (lists.length === 0) {
+    return [];
+  }
+
+  const result = [];
+
+  function combine(index, current) {
+    if (index === lists.length) {
+      result.push(current.join(''));
+      return;
+    }
+    for (let i = 0; i < lists[index].length; i++) {
+      combine(index + 1, current.concat(lists[index][i]));
+    }
+  }
+
+  combine(0, []);
+  return result;
+}
+
+function sfinder_all_permutations(input) {
+  const inputs = input.split(',');
+
+  // Generate all permutations for each input
+  const permutations = inputs.map(input => {
+    let [bagWithBrackets, permutationLength] = input.split('p');
+		if (typeof permutationLength === 'undefined') {
+  	 	permutationLength = 1;
+		}
+
+    const bag = bagWithBrackets.replace(/\*/g, '[IOSZJLT]').replace(/\[|\]/g, '');
+
+    return generate_permutations(bag, permutationLength);
+  });
+
+  return combine_lists(permutations)
+}
+
+
+
 function generate_all_permutations(l)
 {
 	let n = l.length;
@@ -1140,13 +1206,42 @@ function generate_all_permutations(l)
 		.flat(1);
 }
 
-let queues = generate_all_permutations('LJSZIOT').map(q => 'T'+q.join(''));
+function getlength(pathtofile) {
+	const filePath = 'output/path.csv';
+
+	// Read the CSV file
+	fs.readFile(filePath, 'utf-8', (err, data) => {
+	  if (err) {
+	    console.error(err);
+	    return;
+	  }
+
+	  // Split the CSV data into an array of rows
+	  const rows = data.split('\n');
+
+	  // Get the second row (index 1)
+	  const secondRow = rows[1];
+
+	  // Split the row into an array of values
+	  const values = secondRow.split(',');
+
+	  // Get the length of the first value
+	  const length = values[0].length;
+
+	  // Log the length to the console
+		console.log(length)
+	  return(length);
+	});
+}
+
+let queues = sfinder_all_permutations('*p7*');
+console.log(queues)
 
 let results = calculate_all_scores(
 queues,
 loadPathCSV('output/path.csv'), // loadCSV('output/cover.csv')
 false, // initial b2b
-1, // initial combo
+0, // initial combo
 0, // b2b end bonus
 'output/score_cover.csv', // score cover file
 );
