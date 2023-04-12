@@ -1,10 +1,10 @@
-// v2.1
+// v2.2
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
 
 const GAMES = {JSTRIS: {}, TETRIO: {}, GUIDELINE: {}};
-const GAME = GAMES.JSTRIS;
+const GAME = GAMES.TETRIO;
 
 let score_table_normal    = [   0,  100,  300,  500,  800];
 let score_table_spin      = [ 400,  800, 1200, 1600];
@@ -195,16 +195,13 @@ function spin_cw(operation, field, reverse = false) {
 		return result;
 	}
 
-	if (!field.canFill(rotated_operation)) {
-		let kicks = get_cw_kicks(rotated_operation, operation.rotation);
-		for (let kick of kicks) {
-			if (field.canFill(kick)) return kick;
-		}
-		return undefined;
+	
+	let kicks = get_cw_kicks(rotated_operation, operation.rotation);
+	for (let kick of kicks) {
+		if (field.canFill(kick)) return kick;
 	}
-
-
-	return rotated_operation;
+	return undefined;
+	
 }
 
 function spin_ccw(operation, field, reverse = false) {
@@ -237,14 +234,11 @@ function spin_ccw(operation, field, reverse = false) {
 		return result;
 	}
 
-	if (!field.canFill(rotated_operation)) {
-		let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
-		for (kick of kicks) {
-			if (field.canFill(kick)) return kick;
-		}
-		return undefined;
+	let kicks = get_ccw_kicks(rotated_operation, operation.rotation);
+	for (kick of kicks) {
+		if (field.canFill(kick)) return kick;
 	}
-	return rotated_operation;
+	return undefined;
 }
 
 function spin_180(operation, field, reverse = false) {
@@ -277,14 +271,11 @@ function spin_180(operation, field, reverse = false) {
 		return result;
 	}
 
-	if (!field.canFill(rotated_operation)) {
-		let kicks = get_180_kicks(rotated_operation, operation.rotation);
-		for (kick of kicks) {
-			if (field.canFill(kick)) return kick;
-		}
-		return undefined;
+	let kicks = get_180_kicks(rotated_operation, operation.rotation);
+	for (kick of kicks) {
+		if (field.canFill(kick)) return kick;
 	}
-	return rotated_operation;
+	return undefined;
 }
 
 function get_cw_kicks(operation, initial_rotation) {
@@ -888,7 +879,7 @@ function get_score(
 				if (activate_b2b) {b2b = true;}
 				else if (lines_cleared > 0) {b2b = false;}
 
-				if (queue.length <= 1) {
+				if (queue.length <= 1 || pc) {
 					if (b2b) {score += b2b_end_bonus;}
 					results.push({score: score, extra: noteworthy ? [score_event] : [], pcs: +pc, pc_end: pc, b2b_end: b2b});
 					// end of queue is base case for recursive function
@@ -961,7 +952,7 @@ function extra_string(extras) {
 		}
 		if (extra.lines_cleared == 4) temp += "quad";
 
-		result += temp;
+		result += temp + " - ";
 
 	}
 
@@ -1034,6 +1025,7 @@ score_cover_filename = undefined, // .csv file to output score cover to
 
 	let nohold_queues = Object.keys(data_nohold).filter(q => q !== 'sequence' && q !== '');
 	let nohold_queues_set = new Set(nohold_queues);
+	let longestlength = nohold_queues[0].length;
 
 	for (let index = 0; index < data_nohold['sequence'].length; index++) {
 		// load the objects of all the decoded fumens
@@ -1080,6 +1072,7 @@ score_cover_filename = undefined, // .csv file to output score cover to
 		let hold_reorderings = hold_reorders(queue);
 		let max_score_obj;
 		for (let hold_queue of hold_reorderings) {
+			hold_queue = hold_queue.slice(0, longestlength);
 			max_score_obj = pick_better_score(max_score_obj, score_by_nohold_queue[hold_queue]);
 		}
 		if (max_score_obj) {
@@ -1140,14 +1133,14 @@ function generate_all_permutations(l)
 		.flat(1);
 }
 
-let queues = generate_all_permutations('LJSZIOT').map(q => 'T'+q.join(''));
+let queues = generate_all_permutations('LJSZIOT').map(q => q.join(''));
 
 let results = calculate_all_scores(
 queues,
-loadPathCSV('output/path.csv'), // loadCSV('output/cover.csv')
-false, // initial b2b
+loadCSV('output/cover.csv'), // loadCSV('output/cover.csv')
+true, // initial b2b
 1, // initial combo
-0, // b2b end bonus
+600, // b2b end bonus
 'output/score_cover.csv', // score cover file
 );
 console.log(results);
