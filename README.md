@@ -1,4 +1,4 @@
-v2.0
+v2.3
 
 Compute the average score of a DPC setup, given a solution set.  
 Takes into account tspins, quads, line clears, combos.  
@@ -13,6 +13,7 @@ Script can take either path.csv for a base field input or custom solution set co
     - java -jar sfinder.jar cover -d 180 -p *p7 -t [fumen solutions] --hold avoid -o output/cover_nohold.csv
 2) set parameters in the calculate_all_scores() function call
     - set the queues to run through - for *p7 it'll just be generate_all_permutations('TILJSZO')
+    - alternatively, as of v2.3, sfinder_all_permutations() function exists as an option to generate queues.
     - cover data - loadPathCSV() for path.csv input and loadCSV for cover.csv input
     - base b2b
     - base combo

@@ -1,4 +1,4 @@
-// v2.2
+// v2.3
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
@@ -1114,6 +1114,67 @@ score_cover_filename = undefined, // .csv file to output score cover to
 		num_b2b_queues,
 	});
 }
+
+function generate_permutations(bag, permutationLength) {
+	const elements = bag.split('');
+  
+	let permutations = [[]];
+	const result = new Set();
+  
+	// Generate all permutations of the given length
+	for (let i = 0; i < permutationLength; i++) {
+	  permutations = permutations.flatMap(p =>
+		elements
+		  .filter(e => !p.includes(e))
+		  .map(e => p.concat(e))
+	  );
+	}
+  
+	// Convert each permutation back to a string and add to the result set
+	permutations.forEach(p => result.add(p.join('')));
+  
+	// Convert the result set to an array and return it
+	return Array.from(result);
+  }
+  
+  function combine_lists(lists) {
+	if (lists.length === 0) {
+	  return [];
+	}
+  
+	const result = [];
+  
+	function combine(index, current) {
+	  if (index === lists.length) {
+		result.push(current.join(''));
+		return;
+	  }
+	  for (let i = 0; i < lists[index].length; i++) {
+		combine(index + 1, current.concat(lists[index][i]));
+	  }
+	}
+  
+	combine(0, []);
+	return result;
+  }
+  
+function sfinder_all_permutations(input) {
+	const inputs = input.split(',');
+  
+	// Generate all permutations for each input
+	const permutations = inputs.map(input => {
+		let [bagWithBrackets, permutationLength] = input.split('p');
+		if (typeof permutationLength === 'undefined') {
+			permutationLength = 1;
+		}
+  
+		const bag = bagWithBrackets.replace(/\*/g, '[IOSZJLT]').replace(/\[|\]/g, '');
+  
+		return generate_permutations(bag, permutationLength);
+	});
+  
+	return combine_lists(permutations);
+  }
 
 function generate_all_permutations(l)
 {
