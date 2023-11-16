@@ -1,4 +1,4 @@
-// v2.3
+// v2.4
 
 const {encoder, decoder, Page, Field} = require('tetris-fumen');
 const fs = require('fs');
@@ -652,31 +652,33 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 		if (field.canFill(kick)) { // try and reverse it
 			let temp = vanilla_spin_ccw(kick.copy());
 			let temp_kicks = get_ccw_kicks(temp, kick.rotation);
-			for (let i = 1; i < 5; i++) {
+			let fail = false;
+			for (let i = 0; i < 5; i++) {
 				temp_kick = temp_kicks[i];
 				if (field.canFill(temp_kick)) {
 					// console.log(i, kick, temp_kick);
-					if (temp_kick.x == op.x && temp_kick.y == op.y) return i;
-					return -1; // only first working kick
+					if (temp_kick.x == op.x && temp_kick.y == op.y && !fail) return i;
+                    			fail = true; // only first working kick
 
 				}
 			}
-			return -1; // only first working kick
+			// return -1; // only first working kick
 		}
 	}
 	for (let kick of ccw_kicks) {
 		if (field.canFill(kick)) { // try and reverse it
 			let temp = vanilla_spin_cw(kick.copy());
 			let temp_kicks = get_cw_kicks(temp, kick.rotation);
-			for (let i = 1; i < 5; i++) {
+			let fail = false;
+			for (let i = 0; i < 5; i++) {
 				temp_kick = temp_kicks[i];
 				if (field.canFill(temp_kick)) {
 					// console.log(i, kick, temp_kick);
-					if (temp_kick.x == op.x && temp_kick.y == op.y) return i;
-					return -1; // only first working kick
+					if (temp_kick.x == op.x && temp_kick.y == op.y && !fail) return i;
+                    			fail = true; // only first working kick
 				}
 			}
-			return -1; // only first working kick
+			// return -1; // only first working kick
 		}
 	}
 
@@ -691,15 +693,16 @@ function t_spin_checker(op, field) { // returns -1 if not t spin; otherwise, ret
 			if (field.canFill(kick)) { // try and reverse it
 				let temp = vanilla_spin_180(kick.copy());
 				let temp_kicks = get_180_kicks(temp, kick.rotation);
-				for (let i = 1; i < temp_kicks.length; i++) {
+				let fail = false;
+				for (let i = 0; i < temp_kicks.length; i++) {
 					temp_kick = temp_kicks[i];
 					if (field.canFill(temp_kick)) {
 						// console.log(i, kick, temp_kick);
-						if (temp_kick.x == op.x && temp_kick.y == op.y) return i;
-						return -1; // only first working kick
+						if (temp_kick.x == op.x && temp_kick.y == op.y && !fail) return i;
+						fail = true; // only first working kick
 					}
 				}
-				return -1; // only first working kick
+				// return -1; // only first working kick
 			}
 		}
 	}
